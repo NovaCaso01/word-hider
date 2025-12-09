@@ -359,15 +359,18 @@ function onMessageUpdated(messageId) {
         if (typeof messageId === 'number' || !isNaN(messageId)) {
             const $message = $(`#chat .mes[mesid="${messageId}"] .mes_text`);
             if ($message.length) {
-                // 기존 original-html 데이터 제거 (수정된 내용을 새 원본으로)
-                $message.removeData("original-html");
-                applyHidingToElement($message, settings.rules);
+                // 편집 모드가 아닐 때만 적용
+                if (!$message.find('textarea').length) {
+                    // 기존 original-html 데이터 제거 (수정된 내용을 새 원본으로)
+                    $message.removeData("original-html");
+                    applyHidingToElement($message, settings.rules);
+                }
             }
         } else {
             // messageId가 없거나 이상한 경우 전체 다시 적용
             applyWordHiding();
         }
-    }, 150);
+    }, 300);  // 딜레이를 150에서 300으로 늘림
 }
 
 function openWordHiderPopup() {
@@ -472,6 +475,7 @@ if (eventSource) {
     eventSource.on(event_types.USER_MESSAGE_RENDERED, onMessageRendered);
     eventSource.on(event_types.MESSAGE_UPDATED, onMessageUpdated);
     eventSource.on(event_types.MESSAGE_EDITED, onMessageUpdated);
+    eventSource.on(event_types.MESSAGE_SWIPED, onMessageUpdated);
     eventSource.on(event_types.CHAT_CHANGED, () => {
         setTimeout(applyWordHiding, 500);
     });
@@ -519,14 +523,12 @@ if (eventSource) {
                         const $mesText = $(this);
                         // 현재 textarea가 없는 경우만 (편집 중 아님)
                         if (!$mesText.find('textarea').length && !$mesText.closest('.mes').find('.mes_block textarea').length) {
-                            // 가리기가 안 되어있으면 다시 적용
-                            if (!$mesText.find('.word-hider-hidden').length) {
-                                $mesText.removeData("original-html");
-                                applyHidingToElement($mesText, settings.rules);
-                            }
+                            // 가리기가 안 되어있으면 다시 적용 (조건 제거 - 항상 재적용)
+                            $mesText.removeData("original-html");
+                            applyHidingToElement($mesText, settings.rules);
                         }
                     });
-                }, 200);
+                }, 300);  // 딜레이 200에서 300으로 늘림
             }
         });
         
