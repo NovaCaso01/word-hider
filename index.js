@@ -330,6 +330,18 @@ function removeWordHiding() {
         if (original) {
             $mesText.html(original);
             $mesText.removeData("original-html");
+        } else {
+            // original-html이 없는 경우, word-hider-hidden 스팬을 원래 단어로 복원
+            let html = $mesText.html();
+            if (html && html.includes('word-hider-hidden')) {
+                html = html.replace(/<span class="word-hider-hidden"[^>]*data-word="([^"]*)"[^>]*>[^<]*<\/span>/gi, function(match, word) {
+                    // HTML 엔티티 디코딩
+                    const textarea = document.createElement('textarea');
+                    textarea.innerHTML = word;
+                    return textarea.value;
+                });
+                $mesText.html(html);
+            }
         }
     });
 }
