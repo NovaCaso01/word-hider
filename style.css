@@ -324,9 +324,14 @@
 /* 모바일 최적화 */
 @media screen and (max-width: 500px) {
     #word-hider-popup-content {
-        width: 95%;
+        position: fixed;
+        top: 5px !important;
+        left: 5px !important;
+        right: 5px !important;
+        transform: none !important;
+        width: auto !important;
+        max-height: calc(100vh - 10px) !important;
         padding: 15px;
-        max-height: 90vh;
         border-radius: 10px;
     }
     
@@ -349,16 +354,5 @@
     
     #word-hider-rules-list {
         max-height: 150px;
-    }
-}
-
-@media screen and (max-height: 600px) {
-    #word-hider-popup-content {
-        max-height: 95vh;
-        top: 50%;
-    }
-    
-    #word-hider-rules-list {
-        max-height: 120px;
     }
 }
