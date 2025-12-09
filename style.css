@@ -329,11 +329,19 @@
 /* 가려진 단어 스타일 */
 .word-hider-hidden {
     cursor: help;
-    transition: opacity 0.2s;
+    /* 모바일 성능 최적화: transition 제거, contain 추가 */
+    contain: layout style;
 }
 
-.word-hider-hidden:hover {
-    opacity: 0.7;
+/* hover 효과는 PC에서만 (모바일 성능 개선) */
+@media (hover: hover) {
+    .word-hider-hidden {
+        transition: opacity 0.2s;
+    }
+    
+    .word-hider-hidden:hover {
+        opacity: 0.7;
+    }
 }
 
 /* 색상 미리보기 */
