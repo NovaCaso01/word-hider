@@ -398,11 +398,11 @@ function openWordHiderPopup() {
     const settings = getSettings();
     $("#word-hider-toggle").prop("checked", settings.enabled);
     renderRulesList();
-    $("#word-hider-popup").fadeIn(200);
+    $("#word-hider-popup").addClass("open");
 }
 
 function closeWordHiderPopup() {
-    $("#word-hider-popup").fadeOut(200);
+    $("#word-hider-popup").removeClass("open");
     $("#word-hider-add-btn").removeData("edit-index").html('<i class="fa-solid fa-plus"></i> 추가');
     $("#word-hider-word-input").val("");
 }
