@@ -22,52 +22,13 @@
     border-radius: 12px;
     padding: 20px;
     z-index: 9999;
-    width: 90%;
+    min-width: 400px;
     max-width: 500px;
-    max-height: 70vh;
+    max-height: 80vh;
     overflow-y: auto;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
 }
 
-/* 모바일 반응형 스타일 */
-@media screen and (max-width: 600px) {
-    #word-hider-popup-content {
-        width: 90%;                 /* 좌우 여백 확보를 위해 92% -> 90%로 살짝 조정 추천 */
-        max-width: none;
-        max-height: 70vh;           /* 높이도 조금 더 여유 있게 (65vh -> 70vh) */
-        padding: 15px;
-        border-radius: 12px;
-        
-        /* --- 수정된 부분 시작 --- */
-        
-        /* 복잡한 calc 계산을 제거하고 강제로 중앙에 고정합니다 */
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%); 
-        
-        /* safe-area 관련 코드는 제거하세요: top: calc(50% + env(...) / 2); */
-        
-        /* --- 수정된 부분 끝 --- */
-    }
-    
-    /* 아래 부분은 그대로 두셔도 됩니다 */
-    .word-hider-header h3 {
-        font-size: 16px;
-    }
-    
-    .word-hider-add-section,
-    .word-hider-rules-section {
-        padding: 12px;
-    }
-    
-    .word-hider-rule-word {
-        max-width: 100px;
-    }
-    
-    #word-hider-rules-list {
-        max-height: 150px;
-    }
-}
 /* 헤더 */
 .word-hider-header {
     display: flex;
