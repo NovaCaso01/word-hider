@@ -240,8 +240,17 @@ function applyHidingToElement($element, rules) {
     let html = $element.html();
     if (!html) return;
     
+    // 이미 가려진 상태면 원본으로 저장하지 않음
     if (!$element.data("original-html")) {
-        $element.data("original-html", html);
+        // 가려진 span이 포함되어 있으면 원본으로 저장하지 않음
+        if (!html.includes('word-hider-hidden')) {
+            $element.data("original-html", html);
+        }
+    }
+    
+    // 이미 가려진 상태에서 다시 적용하면 원본 HTML 사용
+    if ($element.data("original-html")) {
+        html = $element.data("original-html");
     }
     
     // 보호할 패턴들을 임시 플레이스홀더로 교체
