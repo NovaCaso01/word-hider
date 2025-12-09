@@ -13,6 +13,11 @@ const defaultSettings = {
     rules: []
 };
 
+// 성능 최적화: 처리된 메시지 추적
+const processedMessages = new WeakSet();
+let debounceTimer = null;
+let isProcessing = false;
+
 // 이모지 옵션
 const emojiOptions = [
     { name: "빨간 하트", value: "❤️" },
@@ -230,80 +235,104 @@ function applyWordHiding() {
         return;
     }
     
-    $("#chat .mes .mes_text").each(function() {
-        const $mesText = $(this);
-        applyHidingToElement($mesText, settings.rules);
+    // 성능 최적화: 화면에 보이는 메시지만 우선 처리
+    const chatContainer = document.getElementById('chat');
+    if (!chatContainer) return;
+    
+    const messages = chatContainer.querySelectorAll('.mes .mes_text');
+    const visibleMessages = [];
+    const hiddenMessages = [];
+    
+    // 화면에 보이는 메시지와 안 보이는 메시지 분리
+    messages.forEach(el => {
+        const rect = el.getBoundingClientRect();
+        if (rect.top < window.innerHeight && rect.bottom > 0) {
+            visibleMessages.push(el);
+        } else {
+            hiddenMessages.push(el);
+        }
     });
+    
+    // 화면에 보이는 메시지 즉시 처리
+    visibleMessages.forEach(el => {
+        applyHidingToElement($(el), settings.rules);
+    });
+    
+    // 안 보이는 메시지는 idle 콜백으로 처리 (모바일 성능 개선)
+    if (hiddenMessages.length > 0 && 'requestIdleCallback' in window) {
+        requestIdleCallback(() => {
+            hiddenMessages.forEach(el => {
+                applyHidingToElement($(el), settings.rules);
+            });
+        }, { timeout: 2000 });
+    } else if (hiddenMessages.length > 0) {
+        // requestIdleCallback 미지원 시 setTimeout으로 대체
+        setTimeout(() => {
+            hiddenMessages.forEach(el => {
+                applyHidingToElement($(el), settings.rules);
+            });
+        }, 100);
+    }
 }
 
 function applyHidingToElement($element, rules) {
-    let html = $element.html();
+    const el = $element[0];
+    if (!el) return;
+    
+    let html = el.innerHTML;
     if (!html) return;
     
+    // 이미 처리된 요소는 스킵 (성능 최적화)
+    if (processedMessages.has(el) && html.includes('word-hider-hidden')) {
+        return;
+    }
+    
     // 이미 가려진 상태면 원본으로 저장하지 않음
-    if (!$element.data("original-html")) {
-        // 가려진 span이 포함되어 있으면 원본으로 저장하지 않음
-        if (!html.includes('word-hider-hidden')) {
-            $element.data("original-html", html);
-        }
+    const storedOriginal = $element.data("original-html");
+    if (!storedOriginal && !html.includes('word-hider-hidden')) {
+        $element.data("original-html", html);
     }
     
     // 이미 가려진 상태에서 다시 적용하면 원본 HTML 사용
-    if ($element.data("original-html")) {
-        html = $element.data("original-html");
+    if (storedOriginal) {
+        html = storedOriginal;
     }
     
-    // 보호할 패턴들을 임시 플레이스홀더로 교체
+    // 빠른 체크: 가릴 단어가 있는지 먼저 확인 (없으면 스킵)
+    const hasMatch = rules.some(rule => html.toLowerCase().includes(rule.word.toLowerCase()));
+    if (!hasMatch) {
+        processedMessages.add(el);
+        return;
+    }
+    
+    // 보호할 패턴들을 한 번에 처리 (정규식 결합)
     const protectedPatterns = [];
     let protectedIndex = 0;
     
-    // {{태그::내용}} 패턴 보호 (예: {{img::filename.png}}, {{user}}, {{char}} 등)
-    html = html.replace(/\{\{[^}]+\}\}/g, (match) => {
-        const placeholder = `__WHPROTECTED_${protectedIndex}__`;
-        protectedPatterns.push({ placeholder, original: match });
+    // 통합 정규식으로 한 번에 처리 (성능 개선)
+    const protectRegex = /\{\{[^}]+\}\}|<[^>]+>|(?:\.{0,2}\/)?(?:[\w\-\.]+\/)+[\w\-\.]+\.\w+|[\w\-]+\.(?:png|jpg|jpeg|gif|webp|svg|mp3|mp4|wav|ogg|js|css|html|json|txt|md)/gi;
+    
+    html = html.replace(protectRegex, (match) => {
+        const placeholder = `\x00${protectedIndex}\x00`;
+        protectedPatterns.push(match);
         protectedIndex++;
         return placeholder;
     });
     
-    // HTML 태그 전체 보호 (속성값 포함, 예: <img src="...">, <a href="..."> 등)
-    html = html.replace(/<[^>]+>/g, (match) => {
-        const placeholder = `__WHPROTECTED_${protectedIndex}__`;
-        protectedPatterns.push({ placeholder, original: match });
-        protectedIndex++;
-        return placeholder;
-    });
-    
-    // 파일 경로 패턴 보호 (예: /path/to/file.png, ./file.png, ../folder/file.png)
-    html = html.replace(/(?:\.{0,2}\/)?(?:[\w\-\.]+\/)+[\w\-\.]+\.\w+/g, (match) => {
-        const placeholder = `__WHPROTECTED_${protectedIndex}__`;
-        protectedPatterns.push({ placeholder, original: match });
-        protectedIndex++;
-        return placeholder;
-    });
-    
-    // 파일명 패턴 보호 (확장자가 있는 파일명, 예: image.png, script.js)
-    html = html.replace(/[\w\-]+\.(png|jpg|jpeg|gif|webp|svg|mp3|mp4|wav|ogg|js|css|html|json|txt|md)/gi, (match) => {
-        if (match.includes('__WHPROTECTED_')) return match;
-        const placeholder = `__WHPROTECTED_${protectedIndex}__`;
-        protectedPatterns.push({ placeholder, original: match });
-        protectedIndex++;
-        return placeholder;
-    });
-    
-    // 단어 가리기 규칙 적용
-    rules.forEach(rule => {
-        const replacement = createReplacement(rule);
-        const regex = new RegExp(escapeRegExp(rule.word), 'gi');
-        html = html.replace(regex, replacement);
-    });
-    
-    // 보호된 패턴들 복원 (역순으로 복원하여 중첩 문제 방지)
-    for (let i = protectedPatterns.length - 1; i >= 0; i--) {
-        const { placeholder, original } = protectedPatterns[i];
-        html = html.split(placeholder).join(original);
+    // 단어 가리기 규칙 적용 (미리 생성된 replacement 캐시 사용)
+    for (const rule of rules) {
+        if (!rule._cachedReplacement) {
+            rule._cachedReplacement = createReplacement(rule);
+            rule._cachedRegex = new RegExp(escapeRegExp(rule.word), 'gi');
+        }
+        html = html.replace(rule._cachedRegex, rule._cachedReplacement);
     }
     
-    $element.html(html);
+    // 보호된 패턴들 복원
+    html = html.replace(/\x00(\d+)\x00/g, (_, idx) => protectedPatterns[parseInt(idx)]);
+    
+    el.innerHTML = html;
+    processedMessages.add(el);
 }
 
 function escapeRegExp(string) {
@@ -333,26 +362,37 @@ function createReplacement(rule) {
 }
 
 function removeWordHiding() {
-    $("#chat .mes .mes_text").each(function() {
-        const $mesText = $(this);
+    const messages = document.querySelectorAll("#chat .mes .mes_text");
+    
+    messages.forEach(el => {
+        const $mesText = $(el);
         const original = $mesText.data("original-html");
+        
         if (original) {
-            $mesText.html(original);
+            el.innerHTML = original;
             $mesText.removeData("original-html");
         } else {
             // original-html이 없는 경우, word-hider-hidden 스팬을 원래 단어로 복원
-            let html = $mesText.html();
+            let html = el.innerHTML;
             if (html && html.includes('word-hider-hidden')) {
-                html = html.replace(/<span class="word-hider-hidden"[^>]*data-word="([^"]*)"[^>]*>[^<]*<\/span>/gi, function(match, word) {
-                    // HTML 엔티티 디코딩
+                html = html.replace(/<span class="word-hider-hidden"[^>]*data-word="([^"]*)"[^>]*>[^<]*<\/span>/gi, (match, word) => {
                     const textarea = document.createElement('textarea');
                     textarea.innerHTML = word;
                     return textarea.value;
                 });
-                $mesText.html(html);
+                el.innerHTML = html;
             }
         }
     });
+    
+    // 규칙 캐시 클리어
+    const settings = getSettings();
+    if (settings.rules) {
+        settings.rules.forEach(rule => {
+            delete rule._cachedReplacement;
+            delete rule._cachedRegex;
+        });
+    }
 }
 
 function onMessageRendered(messageId) {
@@ -361,12 +401,13 @@ function onMessageRendered(messageId) {
         return;
     }
     
-    setTimeout(() => {
-        const $message = $(`#chat .mes[mesid="${messageId}"] .mes_text`);
-        if ($message.length) {
-            applyHidingToElement($message, settings.rules);
+    // requestAnimationFrame으로 렌더링 최적화
+    requestAnimationFrame(() => {
+        const message = document.querySelector(`#chat .mes[mesid="${messageId}"] .mes_text`);
+        if (message) {
+            applyHidingToElement($(message), settings.rules);
         }
-    }, 100);
+    });
 }
 
 function onMessageUpdated(messageId) {
@@ -375,23 +416,23 @@ function onMessageUpdated(messageId) {
         return;
     }
     
-    setTimeout(() => {
-        // messageId가 숫자인 경우
-        if (typeof messageId === 'number' || !isNaN(messageId)) {
-            const $message = $(`#chat .mes[mesid="${messageId}"] .mes_text`);
-            if ($message.length) {
-                // 편집 모드가 아닐 때만 적용
-                if (!$message.find('textarea').length) {
-                    // 기존 original-html 데이터 제거 (수정된 내용을 새 원본으로)
-                    $message.removeData("original-html");
-                    applyHidingToElement($message, settings.rules);
+    // requestAnimationFrame + 짧은 딜레이
+    requestAnimationFrame(() => {
+        setTimeout(() => {
+            if (typeof messageId === 'number' || !isNaN(messageId)) {
+                const message = document.querySelector(`#chat .mes[mesid="${messageId}"] .mes_text`);
+                if (message) {
+                    const $message = $(message);
+                    if (!message.querySelector('textarea')) {
+                        $message.removeData("original-html");
+                        applyHidingToElement($message, settings.rules);
+                    }
                 }
+            } else {
+                applyWordHiding();
             }
-        } else {
-            // messageId가 없거나 이상한 경우 전체 다시 적용
-            applyWordHiding();
-        }
-    }, 300);  // 딜레이를 150에서 300으로 늘림
+        }, 150);
+    });
 }
 
 function openWordHiderPopup() {
@@ -505,57 +546,74 @@ if (eventSource) {
     // 초기 적용
     setTimeout(applyWordHiding, 1000);
 
-    // MutationObserver로 메시지 편집 완료 감지
+    // MutationObserver로 메시지 편집 완료 감지 (최적화됨)
     const chatElement = document.getElementById('chat');
     if (chatElement) {
+        // 디바운스된 재적용 함수
+        const debouncedReapply = (targetElements) => {
+            if (debounceTimer) {
+                clearTimeout(debounceTimer);
+            }
+            
+            debounceTimer = setTimeout(() => {
+                if (isProcessing) return;
+                isProcessing = true;
+                
+                const currentSettings = getSettings();
+                if (!currentSettings.enabled) {
+                    isProcessing = false;
+                    return;
+                }
+                
+                // 변경된 요소만 처리 (전체 순회 안 함)
+                if (targetElements && targetElements.size > 0) {
+                    targetElements.forEach(el => {
+                        const $mesText = $(el);
+                        if (!$mesText.find('textarea').length) {
+                            $mesText.removeData("original-html");
+                            applyHidingToElement($mesText, currentSettings.rules);
+                        }
+                    });
+                }
+                
+                isProcessing = false;
+            }, 300);
+        };
+        
         const chatObserver = new MutationObserver((mutations) => {
             const settings = getSettings();
             if (!settings.enabled || settings.rules.length === 0) {
-                return;  // 비활성화 상태면 아무것도 하지 않음
+                return;
             }
             
-            let needsReapply = false;
+            // 변경된 mes_text 요소만 수집
+            const changedElements = new Set();
             
-            mutations.forEach((mutation) => {
-                // 편집 모드 해제 감지 (textarea가 사라지면)
-                if (mutation.type === 'childList') {
-                    mutation.removedNodes.forEach((node) => {
-                        if (node.nodeType === 1) {
-                            // textarea가 제거됨 = 편집 완료
-                            if (node.tagName === 'TEXTAREA' || (node.querySelector && node.querySelector('textarea'))) {
-                                needsReapply = true;
-                            }
-                        }
-                    });
-                    
-                    // mes_text 내용이 변경된 경우
-                    const target = mutation.target;
-                    if (target.classList && target.classList.contains('mes_text')) {
-                        // 편집 모드가 아닐 때만 (textarea가 없을 때)
-                        if (!target.querySelector('textarea') && !target.closest('.mes')?.querySelector('.mes_block textarea')) {
-                            needsReapply = true;
-                        }
+            for (const mutation of mutations) {
+                if (mutation.type !== 'childList') continue;
+                
+                // textarea 제거 감지 (편집 완료)
+                for (const node of mutation.removedNodes) {
+                    if (node.nodeType !== 1) continue;
+                    if (node.tagName === 'TEXTAREA' || (node.querySelector && node.querySelector('textarea'))) {
+                        const mesText = mutation.target.closest('.mes_text') || 
+                                        mutation.target.closest('.mes')?.querySelector('.mes_text');
+                        if (mesText) changedElements.add(mesText);
                     }
                 }
-            });
+                
+                // mes_text 직접 변경 감지
+                const target = mutation.target;
+                if (target.classList?.contains('mes_text')) {
+                    if (!target.querySelector('textarea') && !target.closest('.mes')?.querySelector('.mes_block textarea')) {
+                        changedElements.add(target);
+                    }
+                }
+            }
             
-            if (needsReapply) {
-                setTimeout(() => {
-                    // 비활성화 상태면 재적용하지 않음
-                    const currentSettings = getSettings();
-                    if (!currentSettings.enabled) return;
-                    
-                    // 모든 메시지에서 original-html 초기화 후 다시 적용
-                    $("#chat .mes .mes_text").each(function() {
-                        const $mesText = $(this);
-                        // 현재 textarea가 없는 경우만 (편집 중 아님)
-                        if (!$mesText.find('textarea').length && !$mesText.closest('.mes').find('.mes_block textarea').length) {
-                            // 가리기가 안 되어있으면 다시 적용 (조건 제거 - 항상 재적용)
-                            $mesText.removeData("original-html");
-                            applyHidingToElement($mesText, settings.rules);
-                        }
-                    });
-                }, 300);  // 딜레이 200에서 300으로 늘림
+            // 변경된 요소가 있을 때만 처리
+            if (changedElements.size > 0) {
+                debouncedReapply(changedElements);
             }
         });
         
@@ -564,7 +622,7 @@ if (eventSource) {
             subtree: true
         });
         
-        console.log("[Word Hider] MutationObserver initialized");
+        console.log("[Word Hider] MutationObserver initialized (optimized)");
     }
     
     console.log("[Word Hider] Extension loaded successfully!");
