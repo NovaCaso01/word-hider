@@ -510,7 +510,9 @@ if (eventSource) {
     if (chatElement) {
         const chatObserver = new MutationObserver((mutations) => {
             const settings = getSettings();
-            if (!settings.enabled || settings.rules.length === 0) return;
+            if (!settings.enabled || settings.rules.length === 0) {
+                return;  // 비활성화 상태면 아무것도 하지 않음
+            }
             
             let needsReapply = false;
             
@@ -539,6 +541,10 @@ if (eventSource) {
             
             if (needsReapply) {
                 setTimeout(() => {
+                    // 비활성화 상태면 재적용하지 않음
+                    const currentSettings = getSettings();
+                    if (!currentSettings.enabled) return;
+                    
                     // 모든 메시지에서 original-html 초기화 후 다시 적용
                     $("#chat .mes .mes_text").each(function() {
                         const $mesText = $(this);
