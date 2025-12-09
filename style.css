@@ -1,56 +1,61 @@
 /* 단어 가리기 (Word Hider) Extension Styles */
 
-/* 팝업 오버레이 */
-#word-hider-popup-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.6);
-    z-index: 9998;
+/* 팝업 전체 래퍼 - flexbox로 중앙 정렬 */
+#word-hider-popup {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 99999 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 20px !important;
+    box-sizing: border-box !important;
 }
 
-/* 팝업 컨테이너 */
+/* 팝업 오버레이 (배경) */
+#word-hider-popup-overlay {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: rgba(0, 0, 0, 0.6) !important;
+    z-index: 1 !important;
+}
+
+/* 팝업 컨테이너 (내용) */
 #word-hider-popup-content {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: var(--SmartThemeBlurTintColor, #1a1a2e);
-    border: 1px solid var(--SmartThemeBorderColor, #444);
-    border-radius: 12px;
-    padding: 20px;
-    z-index: 9999;
-    width: 90%;
-    max-width: 500px;
-    max-height: 70vh;
-    overflow-y: auto;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    position: relative !important;
+    z-index: 2 !important;
+    background: var(--SmartThemeBlurTintColor, #1a1a2e) !important;
+    border: 1px solid var(--SmartThemeBorderColor, #444) !important;
+    border-radius: 12px !important;
+    padding: 20px !important;
+    width: 100% !important;
+    max-width: 450px !important;
+    max-height: 70vh !important;
+    overflow-y: auto !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important;
 }
 
 /* 모바일 반응형 스타일 */
 @media screen and (max-width: 600px) {
-    #word-hider-popup-content {
-        width: 90%;                 /* 좌우 여백 확보를 위해 92% -> 90%로 살짝 조정 추천 */
-        max-width: none;
-        max-height: 70vh;           /* 높이도 조금 더 여유 있게 (65vh -> 70vh) */
-        padding: 15px;
-        border-radius: 12px;
-        
-        /* --- 수정된 부분 시작 --- */
-        
-        /* 복잡한 calc 계산을 제거하고 강제로 중앙에 고정합니다 */
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%); 
-        
-        /* safe-area 관련 코드는 제거하세요: top: calc(50% + env(...) / 2); */
-        
-        /* --- 수정된 부분 끝 --- */
+    #word-hider-popup {
+        padding: 15px !important;
     }
     
-    /* 아래 부분은 그대로 두셔도 됩니다 */
+    #word-hider-popup-content {
+        max-width: none !important;
+        max-height: 65vh !important;
+        padding: 15px !important;
+        border-radius: 10px !important;
+    }
+    
     .word-hider-header h3 {
         font-size: 16px;
     }
@@ -68,6 +73,7 @@
         max-height: 150px;
     }
 }
+
 /* 헤더 */
 .word-hider-header {
     display: flex;
