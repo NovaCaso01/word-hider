@@ -22,9 +22,9 @@
     border-radius: 12px;
     padding: 20px;
     z-index: 9999;
-    min-width: 400px;
+    width: 90%;
     max-width: 500px;
-    max-height: 80vh;
+    max-height: 85vh;
     overflow-y: auto;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
 }
@@ -319,4 +319,46 @@
 
 #word-hider-menu-item .extensionsMenuExtensionButton {
     color: var(--SmartThemeQuoteColor, #e91e63);
+}
+
+/* 모바일 최적화 */
+@media screen and (max-width: 500px) {
+    #word-hider-popup-content {
+        width: 95%;
+        padding: 15px;
+        max-height: 90vh;
+        border-radius: 10px;
+    }
+    
+    .word-hider-header h3 {
+        font-size: 16px;
+    }
+    
+    .word-hider-add-section,
+    .word-hider-rules-section {
+        padding: 12px;
+    }
+    
+    .word-hider-rule-word {
+        max-width: 100px;
+    }
+    
+    .word-hider-rule-info {
+        gap: 5px;
+    }
+    
+    #word-hider-rules-list {
+        max-height: 150px;
+    }
+}
+
+@media screen and (max-height: 600px) {
+    #word-hider-popup-content {
+        max-height: 95vh;
+        top: 50%;
+    }
+    
+    #word-hider-rules-list {
+        max-height: 120px;
+    }
 }
