@@ -479,6 +479,38 @@ if (eventSource) {
     
     // 초기 적용
     setTimeout(applyWordHiding, 1000);
+
+    // MutationObserver로 메시지 수정 감지
+const chatObserver = new MutationObserver((mutations) => {
+    const settings = getSettings();
+    if (!settings.enabled || settings.rules.length === 0) return;
+    
+    mutations.forEach((mutation) => {
+        if (mutation.type === 'childList' || mutation.type === 'characterData') {
+            const $target = $(mutation.target);
+            // .mes_text 내부 변경 감지
+            if ($target.hasClass('mes_text') || $target.closest('.mes_text').length) {
+                const $mesText = $target.hasClass('mes_text') ? $target : $target.closest('.mes_text');
+                // 편집 모드가 아닐 때만 적용
+                if (!$mesText.closest('.mes').find('textarea').length) {
+                    setTimeout(() => {
+                        $mesText.removeData("original-html");
+                        applyHidingToElement($mesText, settings.rules);
+                    }, 100);
+                }
+            }
+        }
+    });
+});
+
+const chatElement = document.getElementById('chat');
+if (chatElement) {
+    chatObserver.observe(chatElement, {
+        childList: true,
+        subtree: true,
+        characterData: true
+    });
+}
     
     console.log("[Word Hider] Extension loaded successfully!");
 });
