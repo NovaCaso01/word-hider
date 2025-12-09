@@ -348,6 +348,28 @@ function onMessageRendered(messageId) {
     }, 100);
 }
 
+function onMessageUpdated(messageId) {
+    const settings = getSettings();
+    if (!settings.enabled || settings.rules.length === 0) {
+        return;
+    }
+    
+    setTimeout(() => {
+        // messageId가 숫자인 경우
+        if (typeof messageId === 'number' || !isNaN(messageId)) {
+            const $message = $(`#chat .mes[mesid="${messageId}"] .mes_text`);
+            if ($message.length) {
+                // 기존 original-html 데이터 제거 (수정된 내용을 새 원본으로)
+                $message.removeData("original-html");
+                applyHidingToElement($message, settings.rules);
+            }
+        } else {
+            // messageId가 없거나 이상한 경우 전체 다시 적용
+            applyWordHiding();
+        }
+    }, 150);
+}
+
 function openWordHiderPopup() {
     const settings = getSettings();
     $("#word-hider-toggle").prop("checked", settings.enabled);
@@ -444,14 +466,16 @@ jQuery(async () => {
     // 확장 메뉴에 버튼 추가 (딜레이 후)
     setTimeout(addExtensionMenuButton, 2000);
     
-    // 이벤트 리스너 등록 - SillyTavern의 eventSource 사용
-    if (eventSource) {
-        eventSource.on(event_types.CHARACTER_MESSAGE_RENDERED, onMessageRendered);
-        eventSource.on(event_types.USER_MESSAGE_RENDERED, onMessageRendered);
-        eventSource.on(event_types.CHAT_CHANGED, () => {
-            setTimeout(applyWordHiding, 500);
-        });
-    }
+// 이벤트 리스너 등록 - SillyTavern의 eventSource 사용
+if (eventSource) {
+    eventSource.on(event_types.CHARACTER_MESSAGE_RENDERED, onMessageRendered);
+    eventSource.on(event_types.USER_MESSAGE_RENDERED, onMessageRendered);
+    eventSource.on(event_types.MESSAGE_UPDATED, onMessageUpdated);
+    eventSource.on(event_types.MESSAGE_EDITED, onMessageUpdated);
+    eventSource.on(event_types.CHAT_CHANGED, () => {
+        setTimeout(applyWordHiding, 500);
+    });
+}
     
     // 초기 적용
     setTimeout(applyWordHiding, 1000);
