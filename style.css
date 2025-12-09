@@ -1,32 +1,84 @@
 /* 단어 가리기 (Word Hider) Extension Styles */
 
-/* 팝업 오버레이 */
-#word-hider-popup-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.6);
-    z-index: 9998;
+/* 팝업 전체 래퍼 - flexbox로 중앙 정렬 */
+#word-hider-popup {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 99999 !important;
+    display: none;
+    padding: 20px !important;
+    box-sizing: border-box !important;
 }
 
-/* 팝업 컨테이너 */
+/* 팝업이 열렸을 때 flexbox 적용 */
+#word-hider-popup.open {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* 팝업 오버레이 (배경) */
+#word-hider-popup-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: rgba(0, 0, 0, 0.6) !important;
+    z-index: 1 !important;
+}
+
+/* 팝업 컨테이너 (내용) */
 #word-hider-popup-content {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: var(--SmartThemeBlurTintColor, #1a1a2e);
-    border: 1px solid var(--SmartThemeBorderColor, #444);
-    border-radius: 12px;
-    padding: 20px;
-    z-index: 9999;
-    min-width: 400px;
-    max-width: 500px;
-    max-height: 80vh;
-    overflow-y: auto;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    position: relative !important;
+    z-index: 2 !important;
+    background: var(--SmartThemeBlurTintColor, #1a1a2e) !important;
+    border: 1px solid var(--SmartThemeBorderColor, #444) !important;
+    border-radius: 12px !important;
+    padding: 20px !important;
+    width: 100% !important;
+    max-width: 450px !important;
+    max-height: 70vh !important;
+    overflow-y: auto !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important;
+    margin: auto !important;
+}
+
+/* 모바일 반응형 스타일 */
+@media screen and (max-width: 600px) {
+    #word-hider-popup {
+        padding: 10px !important;
+    }
+    
+    #word-hider-popup-content {
+        max-width: none !important;
+        max-height: 80vh !important;
+        padding: 15px !important;
+        border-radius: 10px !important;
+        width: calc(100% - 20px) !important;
+    }
+    
+    .word-hider-header h3 {
+        font-size: 16px;
+    }
+    
+    .word-hider-add-section,
+    .word-hider-rules-section {
+        padding: 12px;
+    }
+    
+    .word-hider-rule-word {
+        max-width: 100px;
+    }
+    
+    #word-hider-rules-list {
+        max-height: 150px;
+    }
 }
 
 /* 헤더 */
