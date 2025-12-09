@@ -1,0 +1,70 @@
+<!-- 단어 가리기 팝업 UI -->
+<div id="word-hider-popup" style="display: none;">
+    <div id="word-hider-popup-overlay"></div>
+    <div id="word-hider-popup-content">
+        <div class="word-hider-header">
+            <h3><i class="fa-solid fa-eye-slash"></i> 단어 가리기</h3>
+            <button id="word-hider-close-btn" class="menu_button" title="닫기">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        
+        <div class="word-hider-toggle-section">
+            <label class="word-hider-toggle-label">
+                <input type="checkbox" id="word-hider-toggle" />
+                <span class="word-hider-toggle-text">단어 가리기 활성화</span>
+            </label>
+        </div>
+        
+        <div class="word-hider-add-section">
+            <h4><i class="fa-solid fa-plus-circle"></i> 새 단어 추가</h4>
+            
+            <div class="word-hider-input-row">
+                <label>가릴 단어/문장:</label>
+                <input type="text" id="word-hider-word-input" placeholder="예: 깡캐" />
+            </div>
+            
+            <div class="word-hider-input-row">
+                <label>가리기 방식:</label>
+                <select id="word-hider-hide-type">
+                    <option value="color">색상으로 가리기</option>
+                    <option value="emoji">이모지로 가리기</option>
+                    <option value="ascii">아스키아트로 가리기</option>
+                </select>
+            </div>
+            
+            <!-- 색상 옵션 -->
+            <div id="word-hider-color-group" class="word-hider-option-group">
+                <label>색상 선택:</label>
+                <input type="color" id="word-hider-color-picker" value="#000000" />
+            </div>
+            
+            <!-- 이모지 옵션 -->
+            <div id="word-hider-emoji-group" class="word-hider-option-group" style="display: none;">
+                <label>이모지 선택:</label>
+                <select id="word-hider-emoji-select">
+                    <!-- 옵션은 JS에서 동적 생성 -->
+                </select>
+            </div>
+            
+            <!-- 아스키아트 옵션 -->
+            <div id="word-hider-ascii-group" class="word-hider-option-group" style="display: none;">
+                <label>아스키아트 선택:</label>
+                <select id="word-hider-ascii-select">
+                    <!-- 옵션은 JS에서 동적 생성 -->
+                </select>
+            </div>
+            
+            <button id="word-hider-add-btn" class="menu_button">
+                <i class="fa-solid fa-plus"></i> 추가
+            </button>
+        </div>
+        
+        <div class="word-hider-rules-section">
+            <h4><i class="fa-solid fa-list"></i> 가리기 규칙 목록</h4>
+            <div id="word-hider-rules-list">
+                <!-- 규칙 목록이 여기에 렌더링됨 -->
+            </div>
+        </div>
+    </div>
+</div>
