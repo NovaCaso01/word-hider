@@ -29,6 +29,36 @@
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
 }
 
+/* 모바일 반응형 스타일 */
+@media screen and (max-width: 600px) {
+    #word-hider-popup-content {
+        width: 92%;
+        max-width: none;
+        max-height: 65vh;
+        padding: 15px;
+        border-radius: 10px;
+        /* safe-area 고려 (노치 등) */
+        top: calc(50% + env(safe-area-inset-top, 0px) / 2);
+    }
+    
+    .word-hider-header h3 {
+        font-size: 16px;
+    }
+    
+    .word-hider-add-section,
+    .word-hider-rules-section {
+        padding: 12px;
+    }
+    
+    .word-hider-rule-word {
+        max-width: 100px;
+    }
+    
+    #word-hider-rules-list {
+        max-height: 150px;
+    }
+}
+
 /* 헤더 */
 .word-hider-header {
     display: flex;
@@ -319,31 +349,4 @@
 
 #word-hider-menu-item .extensionsMenuExtensionButton {
     color: var(--SmartThemeQuoteColor, #e91e63);
-}
-
-/* 모바일 최적화 */
-@media screen and (max-width: 500px) {
-    #word-hider-popup-content {
-        width: 94%;
-        padding: 15px;
-        max-height: 65vh;
-        border-radius: 10px;
-    }
-    
-    .word-hider-header h3 {
-        font-size: 16px;
-    }
-    
-    .word-hider-add-section,
-    .word-hider-rules-section {
-        padding: 12px;
-    }
-    
-    .word-hider-rule-word {
-        max-width: 100px;
-    }
-    
-    #word-hider-rules-list {
-        max-height: 120px;
-    }
 }
