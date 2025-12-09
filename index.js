@@ -480,37 +480,63 @@ if (eventSource) {
     // 초기 적용
     setTimeout(applyWordHiding, 1000);
 
-    // MutationObserver로 메시지 수정 감지
-const chatObserver = new MutationObserver((mutations) => {
-    const settings = getSettings();
-    if (!settings.enabled || settings.rules.length === 0) return;
-    
-    mutations.forEach((mutation) => {
-        if (mutation.type === 'childList' || mutation.type === 'characterData') {
-            const $target = $(mutation.target);
-            // .mes_text 내부 변경 감지
-            if ($target.hasClass('mes_text') || $target.closest('.mes_text').length) {
-                const $mesText = $target.hasClass('mes_text') ? $target : $target.closest('.mes_text');
-                // 편집 모드가 아닐 때만 적용
-                if (!$mesText.closest('.mes').find('textarea').length) {
-                    setTimeout(() => {
-                        $mesText.removeData("original-html");
-                        applyHidingToElement($mesText, settings.rules);
-                    }, 100);
+    // MutationObserver로 메시지 편집 완료 감지
+    const chatElement = document.getElementById('chat');
+    if (chatElement) {
+        const chatObserver = new MutationObserver((mutations) => {
+            const settings = getSettings();
+            if (!settings.enabled || settings.rules.length === 0) return;
+            
+            let needsReapply = false;
+            
+            mutations.forEach((mutation) => {
+                // 편집 모드 해제 감지 (textarea가 사라지면)
+                if (mutation.type === 'childList') {
+                    mutation.removedNodes.forEach((node) => {
+                        if (node.nodeType === 1) {
+                            // textarea가 제거됨 = 편집 완료
+                            if (node.tagName === 'TEXTAREA' || (node.querySelector && node.querySelector('textarea'))) {
+                                needsReapply = true;
+                            }
+                        }
+                    });
+                    
+                    // mes_text 내용이 변경된 경우
+                    const target = mutation.target;
+                    if (target.classList && target.classList.contains('mes_text')) {
+                        // 편집 모드가 아닐 때만 (textarea가 없을 때)
+                        if (!target.querySelector('textarea') && !target.closest('.mes')?.querySelector('.mes_block textarea')) {
+                            needsReapply = true;
+                        }
+                    }
                 }
+            });
+            
+            if (needsReapply) {
+                setTimeout(() => {
+                    // 모든 메시지에서 original-html 초기화 후 다시 적용
+                    $("#chat .mes .mes_text").each(function() {
+                        const $mesText = $(this);
+                        // 현재 textarea가 없는 경우만 (편집 중 아님)
+                        if (!$mesText.find('textarea').length && !$mesText.closest('.mes').find('.mes_block textarea').length) {
+                            // 가리기가 안 되어있으면 다시 적용
+                            if (!$mesText.find('.word-hider-hidden').length) {
+                                $mesText.removeData("original-html");
+                                applyHidingToElement($mesText, settings.rules);
+                            }
+                        }
+                    });
+                }, 200);
             }
-        }
-    });
-});
-
-const chatElement = document.getElementById('chat');
-if (chatElement) {
-    chatObserver.observe(chatElement, {
-        childList: true,
-        subtree: true,
-        characterData: true
-    });
-}
+        });
+        
+        chatObserver.observe(chatElement, {
+            childList: true,
+            subtree: true
+        });
+        
+        console.log("[Word Hider] MutationObserver initialized");
+    }
     
     console.log("[Word Hider] Extension loaded successfully!");
 });
