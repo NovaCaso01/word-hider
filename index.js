@@ -32,6 +32,8 @@ const emojiOptions = [
     { name: "로봇", value: "🤖" },
     { name: "눈송이", value: "❄️" },
     { name: "별", value: "⭐" },
+    { name: "달", value: "🌙" },
+    { name: "토성", value: "🪐" },
     { name: "해바라기", value: "🌻" },
     { name: "벚꽃", value: "🌸" },
     { name: "네잎클로버", value: "🍀" },
@@ -47,9 +49,7 @@ const emojiOptions = [
     { name: "라쿤", value: "🦝" },
     { name: "고양이", value: "🐱" },
     { name: "사자", value: "🦁" },
-    { name: "호랑이", value: "🐯" },
-    { name: "달", value: "🌙" },
-    { name: "토성", value: "🪐" }
+    { name: "호랑이", value: "🐯" }
 ];
 
 // 아스키아트 옵션
