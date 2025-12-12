@@ -319,13 +319,32 @@ function applyHidingToElement($element, rules) {
         return placeholder;
     });
     
-    // 단어 가리기 규칙 적용 (미리 생성된 replacement 캐시 사용)
-    for (const rule of rules) {
-        if (!rule._cachedReplacement) {
-            rule._cachedReplacement = createReplacement(rule);
-            rule._cachedRegex = new RegExp(escapeRegExp(rule.word), 'gi');
-        }
-        html = html.replace(rule._cachedRegex, rule._cachedReplacement);
+    // 규칙을 단어 길이순으로 내림차순 정렬 (긴 단어 먼저 처리하여 중첩 문제 방지)
+    const sortedRules = [...rules].sort((a, b) => b.word.length - a.word.length);
+    
+    // 모든 단어를 하나의 정규식으로 합쳐서 한 번에 처리 (중첩 문제 완전 해결)
+    const ruleMap = new Map();
+    sortedRules.forEach(rule => {
+        ruleMap.set(rule.word.toLowerCase(), rule);
+    });
+    
+    // 긴 단어 우선으로 정렬된 패턴들을 OR로 연결
+    const combinedPattern = sortedRules
+        .map(rule => escapeRegExp(rule.word))
+        .join('|');
+    
+    if (combinedPattern) {
+        const combinedRegex = new RegExp(combinedPattern, 'gi');
+        html = html.replace(combinedRegex, (match) => {
+            const rule = ruleMap.get(match.toLowerCase());
+            if (rule) {
+                if (!rule._cachedReplacement) {
+                    rule._cachedReplacement = createReplacement(rule);
+                }
+                return rule._cachedReplacement;
+            }
+            return match;
+        });
     }
     
     // 보호된 패턴들 복원
